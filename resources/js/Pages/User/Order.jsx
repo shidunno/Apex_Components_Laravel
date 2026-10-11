@@ -1,26 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { router } from '@inertiajs/react';
 import { Truck, Package, CheckCircle2, Clock, Eye } from 'lucide-react';
-import Navbar from '../Components/Navbar';
-import Footer from '../Components/Footer';
+import Navbar from '../../Components/Navbar';
+import Footer from '../../Components/Footer';
 
-export default function Order() {
-  const [orders, setOrders] = useState([]);
+const formatPeso = (value) =>
+  new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 2,
+  }).format(Number(value) || 0);
+
+export default function Order({ orders = [] }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
-
-  // Load actual orders from localStorage on mount
-  useEffect(() => {
-    const savedOrders = JSON.parse(localStorage.getItem('pc_orders') || '[]');
-    setOrders(savedOrders);
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#0d0d0f] text-white flex flex-col selection:bg-purple-600 selection:text-white relative">
       <Navbar />
 
-      {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0 bg-[#0d0d0f] max-w-6xl mx-auto w-full p-6 md:p-10 pt-8 space-y-8">
         
-        {/* Page Title & Stats Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-800">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-white">Order History</h1>
@@ -36,7 +35,6 @@ export default function Order() {
           </div>
         </div>
 
-        {/* Orders Body */}
         {orders.length === 0 ? (
           <div className="text-center py-24 bg-[#161619] border border-neutral-800 rounded-3xl space-y-3 shadow-xl">
             <Package className="w-12 h-12 mx-auto text-neutral-600" />
@@ -52,10 +50,9 @@ export default function Order() {
                   key={order.id}
                   className="bg-[#161619] border border-neutral-800 rounded-3xl p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 hover:border-purple-500/40 transition-all shadow-lg"
                 >
-                  {/* Order Meta */}
                   <div className="space-y-2">
                     <div className="flex items-center space-x-3">
-                      <span className="text-base font-bold text-white">{order.id}</span>
+                      <span className="text-base font-bold text-white">ORD-{order.id}</span>
                       <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border flex items-center gap-1.5 ${
                         order.status === 'Delivered' 
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
@@ -70,11 +67,10 @@ export default function Order() {
                       </span>
                     </div>
                     <p className="text-xs text-neutral-400">
-                      Placed on <span className="text-neutral-200 font-medium">{order.date}</span> • Shipping to: <span className="text-neutral-200 font-medium">{order.shippingAddress}</span>
+                      Placed on <span className="text-neutral-200 font-medium">{new Date(order.created_at).toLocaleDateString()}</span> • Shipping to: <span className="text-neutral-200 font-medium">{order.shipping_address}</span>
                     </p>
                   </div>
 
-                  {/* Items & Total info */}
                   <div className="flex items-center space-x-8">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">Items</span>
@@ -82,7 +78,7 @@ export default function Order() {
                     </div>
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">Order Total</span>
-                      <span className="text-base font-bold text-white">${order.totalPrice.toFixed(2)}</span>
+                      <span className="text-base font-bold text-white">{formatPeso(order.total_price)}</span>
                     </div>
 
                     <button
@@ -102,7 +98,6 @@ export default function Order() {
       </main>
       <Footer />
 
-      {/* Order Details Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setSelectedOrder(null)}></div>
@@ -111,7 +106,7 @@ export default function Order() {
             <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
               <div>
                 <h3 className="text-lg font-bold text-white">Order Summary</h3>
-                <p className="text-xs text-neutral-400 mt-0.5">{selectedOrder.id}</p>
+                <p className="text-xs text-neutral-400 mt-0.5">ORD-{selectedOrder.id}</p>
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
@@ -121,11 +116,10 @@ export default function Order() {
               </button>
             </div>
 
-            {/* Tracking/Address info */}
             <div className="bg-[#0f0f12] p-4 rounded-2xl border border-neutral-800 space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-neutral-400">Shipping Address:</span>
-                <span className="text-white font-semibold text-right">{selectedOrder.shippingAddress}</span>
+                <span className="text-white font-semibold text-right">{selectedOrder.shipping_address}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-neutral-400">Fulfillment Status:</span>
@@ -133,7 +127,6 @@ export default function Order() {
               </div>
             </div>
 
-            {/* Product list in order */}
             <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 block">Purchased Parts</span>
               {selectedOrder.items && selectedOrder.items.map((item, idx) => (
@@ -147,14 +140,14 @@ export default function Order() {
                       <p className="text-[10px] text-neutral-400 mt-0.5">Qty: {item.quantity || 1}</p>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-white">${(item.totalPrice || item.price || 0).toFixed(2)}</span>
+                  <span className="text-xs font-bold text-white">{formatPeso(item.totalPrice || item.price || 0)}</span>
                 </div>
               ))}
             </div>
 
             <div className="pt-4 border-t border-neutral-800 flex items-center justify-between">
-              <span className="text-sm font-bold text-neutral-400">Total Paid (Inc. Shipping):</span>
-              <span className="text-lg font-bold text-white">${selectedOrder.totalPrice.toFixed(2)}</span>
+              <span className="text-sm font-bold text-neutral-400">Total Paid:</span>
+              <span className="text-lg font-bold text-white">{formatPeso(selectedOrder.total_price)}</span>
             </div>
           </div>
         </div>

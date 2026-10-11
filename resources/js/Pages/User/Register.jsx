@@ -1,36 +1,32 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import Footer from '../js/Components/Footer';
+import { Link, useForm } from '@inertiajs/react';
+import { route } from '../../../../vendor/tightenco/ziggy';
+import Footer from '../../Components/Footer';
 
 // Import your images from the assets folder
-import loginImg1 from '../js/Assets/loginimg1.jpg';
-import loginImg2 from '../js/Assets/loginimg2.jpg';
-import loginImg3 from '../js/Assets/loginimg3.jpg';
+import loginImg1 from '../../Assets/loginimg1.jpg';
+import loginImg2 from '../../Assets/loginimg2.jpg';
+import loginImg3 from '../../Assets/loginimg3.jpg';
 
 const slides = [
   {
     image: loginImg1,
     title: "Build Your Vision,\nDefine Your Space.",
-    description: "Secure, high-performance access to your custom hardware components inventory and resource tracking dashboard."
+    description: "Join Apex Components to track custom hardware builds, manage inventory, and access high-end PC parts."
   },
   {
     image: loginImg2,
     title: "Next-Gen Hardware\nat Your Fingertips.",
-    description: "Manage high-end GPUs, processors, and custom cooling loops with ultimate precision and real-time stock updates."
+    description: "Create an account to unlock real-time inventory tracking, custom configurations, and seamless component updates."
   },
   {
     image: loginImg3,
     title: "Streamlined Inventory\n& Component Management.",
-    description: "Keep track of all your custom PC builds, stock levels, and supply chains seamlessly in one centralized platform."
+    description: "Your centralized hub for high-performance PC components, cooling solutions, and hardware tracking."
   }
 ];
 
-export default function Login() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+export default function Register() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Automatically cycle through the slider images every 6 seconds
@@ -41,49 +37,18 @@ export default function Login() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleLogin = (e) => {
+  const { data, setData, post, processing, errors, reset } = useForm({
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+  });
+
+  const handleRegister = (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setErrorMessage('');
-    
-    setTimeout(() => {
-      setIsLoading(false);
-
-      // 1. Check default test accounts
-      const isDefaultUser = 
-        (email === 'user@gmail.com' && password === 'qazplm09') ||
-        (email === 'admin@gmail.com' && password === 'qazplm09');
-
-      // 2. Check accounts registered via Register.jsx
-      const registeredUsers = JSON.parse(localStorage.getItem('apex_registered_users') || '[]');
-      const foundUser = registeredUsers.find(
-        (u) => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.password === password
-      );
-
-      if (isDefaultUser || foundUser) {
-        // Determine if user is admin based on email
-        const isAdmin = email.trim().toLowerCase() === 'admin@gmail.com';
-        
-        const userData = {
-          email: email,
-          role: isAdmin ? 'admin' : 'user'
-        };
-
-        // Save session data
-        localStorage.setItem('apex_user', JSON.stringify(userData));
-        localStorage.setItem('user_email', email); // keeping compatibility if used elsewhere
-
-        // Conditional routing based on role
-        if (isAdmin) {
-          navigate('/admin');
-        } else {
-          navigate('/dashboard');
-        }
-      } else {
-        // Failed login
-        setErrorMessage('Invalid email or password. Please check your credentials or create an account.');
-      }
-    }, 1000);
+    post(route('register'), {
+      onFinish: () => reset('password', 'password_confirmation'),
+    });
   };
 
   return (
@@ -130,7 +95,7 @@ export default function Login() {
           <div className="relative z-10 space-y-4">
             <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 bg-purple-500/10 text-purple-300 text-xs font-semibold rounded-full border border-purple-500/20 backdrop-blur-md shadow-inner">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
-              <span>Enterprise Component Hub</span>
+              <span>Create Your Account</span>
             </div>
             
             <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-white whitespace-pre-line drop-shadow-md">
@@ -160,22 +125,32 @@ export default function Login() {
         {/* Right Form Panel */}
         <div className="w-full md:w-1/2 p-8 sm:p-12 md:p-14 flex flex-col justify-center bg-[#161619]">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Welcome Back</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Get Started</h1>
             <p className="text-sm text-neutral-400">
-              New to Apex?{' '}
-              <Link to="/register" className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">
-                Create an account
+              Already have an account?{' '}
+              <Link href={route('login')} className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">
+                Log in
               </Link>
             </p>
           </div>
 
-          {errorMessage && (
-            <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-xl font-medium">
-              {errorMessage}
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-1.5" htmlFor="name">
+                Full Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={data.name}
+                onChange={(e) => setData('name', e.target.value)}
+                placeholder="John Doe"
+                required
+                className="w-full px-4 py-3 bg-[#0f0f12] border border-neutral-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all placeholder:text-neutral-600 shadow-inner"
+              />
+              {errors.name && <div className="mt-1.5 text-rose-400 text-xs font-medium">{errors.name}</div>}
             </div>
-          )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-1.5" htmlFor="email">
                 Email Address
@@ -183,60 +158,61 @@ export default function Login() {
               <input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={data.email}
+                onChange={(e) => setData('email', e.target.value)}
                 placeholder="name@apex.com"
                 required
                 className="w-full px-4 py-3 bg-[#0f0f12] border border-neutral-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all placeholder:text-neutral-600 shadow-inner"
               />
+              {errors.email && <div className="mt-1.5 text-rose-400 text-xs font-medium">{errors.email}</div>}
             </div>
 
             <div>
-              <div className="flex justify-between items-baseline mb-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-neutral-400" htmlFor="password">
-                  Password
-                </label>
-                <Link to="/forgot-password" className="text-xs text-purple-400 hover:text-purple-300 font-medium transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
+              <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-1.5" htmlFor="password">
+                Password
+              </label>
               <input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={data.password}
+                onChange={(e) => setData('password', e.target.value)}
+                placeholder="••••••••••••"
+                required
+                className="w-full px-4 py-3 bg-[#0f0f12] border border-neutral-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all placeholder:text-neutral-600 shadow-inner"
+              />
+              {errors.password && <div className="mt-1.5 text-rose-400 text-xs font-medium">{errors.password}</div>}
+            </div>
+
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-1.5" htmlFor="password_confirmation">
+                Confirm Password
+              </label>
+              <input
+                id="password_confirmation"
+                type="password"
+                value={data.password_confirmation}
+                onChange={(e) => setData('password_confirmation', e.target.value)}
                 placeholder="••••••••••••"
                 required
                 className="w-full px-4 py-3 bg-[#0f0f12] border border-neutral-800 rounded-xl text-white text-sm focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all placeholder:text-neutral-600 shadow-inner"
               />
             </div>
 
-            <div className="flex items-center pt-1">
-              <input 
-                id="terms" 
-                type="checkbox" 
-                className="h-4 w-4 rounded border-neutral-700 bg-[#0f0f12] text-purple-600 focus:ring-purple-600 focus:ring-offset-[#161619] cursor-pointer" 
-              />
-              <label htmlFor="terms" className="ml-2.5 text-xs text-neutral-400 cursor-pointer select-none">
-                I agree to the <Link to="#" className="text-purple-400 hover:underline">Terms & Conditions</Link>
-              </label>
-            </div>
-
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={processing}
               className="w-full mt-2 flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-purple-600 via-purple-600 to-indigo-600 text-white font-semibold text-sm rounded-xl hover:from-purple-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[#161619] transition-all duration-200 shadow-xl shadow-purple-900/30 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
             >
-              {isLoading ? (
+              {processing ? (
                 <span className="flex items-center space-x-2">
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Authenticating...
+                  Creating Account...
                 </span>
               ) : (
-                'Log In to Dashboard'
+                'Create Account'
               )}
             </button>
           </form>

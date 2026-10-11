@@ -1,23 +1,20 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Award, ArrowRight, Shield, Sparkles, Trophy, 
   Target, Globe, Users, Compass, Cpu, Zap, Layers, Sliders 
 } from 'lucide-react';
-import Navbar from '../Components/Navbar';
-import Footer from '../Components/Footer';
-import Businessprofile from '../Components/Businessprofile';
-import ProductsServices from '../Components/ProductsServices';
-import MissionVision from '../Components/MissionVision';
+import Navbar from '../../Components/Navbar.jsx';
+import Footer from '../../Components/Footer.jsx';
+import Businessprofile from '../../Components/Businessprofile';
+import ProductsServices from '../../Components/ProductsServices';
+import MissionVision from '../../Components/MissionVision.jsx';
 
 // Import your asset images
-import loginImg1 from '../Assets/loginimg1.jpg';
-import loginImg2 from '../Assets/loginimg2.jpg';
-import loginImg3 from '../Assets/loginimg3.jpg';
+import loginImg1 from '../../Assets/loginimg1.jpg';
+import loginImg2 from '../../Assets/loginimg2.jpg';
+import loginImg3 from '../../Assets/loginimg3.jpg';
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-
   const achievements = [
     { 
       id: 1, 

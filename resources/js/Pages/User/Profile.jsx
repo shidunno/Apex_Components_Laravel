@@ -2,21 +2,22 @@ import { useState, useRef, useEffect } from 'react';
 import { 
   Award, User, Mail, ShieldCheck, Key, Save, CheckCircle2, Lock, MapPin, Camera 
 } from 'lucide-react';
-import Navbar from '../Components/Navbar';
-import Footer from '../Components/Footer';
+import { router } from '@inertiajs/react';
+import Navbar from '../../Components/Navbar';
+import Footer from '../../Components/Footer';
 
-export default function Profile() {
+export default function Profile({ auth }) {
   const [formData, setFormData] = useState({
-    name: 'Justine Salcedo',
-    email: 'justine.salcedo@example.com',
+    name: auth?.user?.name || '',
+    email: auth?.user?.email || '',
   });
 
   const [addressData, setAddressData] = useState({
-    street: 'San Jose City',
-    city: 'San Jose City',
-    state: 'Nueva Ecija',
-    postalCode: '3121',
-    country: 'Philippines',
+    street: auth?.user?.street || '',
+    city: auth?.user?.city || '',
+    state: auth?.user?.state || '',
+    postalCode: auth?.user?.postal_code || '',
+    country: auth?.user?.country || 'Philippines',
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -25,7 +26,7 @@ export default function Profile() {
     confirmPassword: '',
   });
 
-  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(auth?.user?.avatar || null);
   const fileInputRef = useRef(null);
 
   const [saved, setSaved] = useState(false);
@@ -33,33 +34,25 @@ export default function Profile() {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState('');
 
-  // Load user profile and address data from localStorage on mount
   useEffect(() => {
-    const sessionEmail = localStorage.getItem('user_email');
-    const registeredUsers = JSON.parse(localStorage.getItem('apex_registered_users') || '[]');
-    const savedAddress = JSON.parse(localStorage.getItem('apex_user_address') || 'null');
-    const savedAvatar = localStorage.getItem('apex_user_avatar');
-
-    if (sessionEmail) {
-      const foundUser = registeredUsers.find(u => u.email.trim().toLowerCase() === sessionEmail.trim().toLowerCase());
-      if (foundUser) {
-        setFormData({
-          name: foundUser.name || 'Justine Salcedo',
-          email: foundUser.email || sessionEmail
-        });
-      } else {
-        setFormData(prev => ({ ...prev, email: sessionEmail }));
+    // Sync if props update
+    if (auth?.user) {
+      setFormData({
+        name: auth.user.name || '',
+        email: auth.user.email || '',
+      });
+      setAddressData({
+        street: auth.user.street || '',
+        city: auth.user.city || '',
+        state: auth.user.state || '',
+        postalCode: auth.user.postal_code || '',
+        country: auth.user.country || 'Philippines',
+      });
+      if (auth.user.avatar) {
+        setAvatarPreview(auth.user.avatar);
       }
     }
-
-    if (savedAddress) {
-      setAddressData(savedAddress);
-    }
-
-    if (savedAvatar) {
-      setAvatarPreview(savedAvatar);
-    }
-  }, []);
+  }, [auth]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -77,50 +70,42 @@ export default function Profile() {
   const handleProfileSubmit = (e) => {
     e.preventDefault();
     
-    localStorage.setItem('user_email', formData.email);
-    const registeredUsers = JSON.parse(localStorage.getItem('apex_registered_users') || '[]');
-    const sessionEmail = localStorage.getItem('user_email');
-
-    const updatedUsers = registeredUsers.map(u => {
-      if (u.email === sessionEmail || u.name === formData.name) {
-        return { ...u, name: formData.name, email: formData.email };
+    // Example Inertia post/put request to update profile details
+    router.put('/profile', {
+      name: formData.name,
+      email: formData.email,
+    }, {
+      preserveScroll: true,
+      onSuccess: () => {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
       }
-      return u;
     });
-
-    if (!updatedUsers.some(u => u.email === formData.email)) {
-      updatedUsers.push({ name: formData.name, email: formData.email });
-    }
-
-    localStorage.setItem('apex_registered_users', JSON.stringify(updatedUsers));
-
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
   };
 
   const handleAddressSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('apex_user_address', JSON.stringify(addressData));
-    setAddressSaved(true);
-    setTimeout(() => setAddressSaved(false), 3000);
+    
+    router.put('/profile/address', {
+      street: addressData.street,
+      city: addressData.city,
+      state: addressData.state,
+      postal_code: addressData.postalCode,
+      country: addressData.country,
+    }, {
+      preserveScroll: true,
+      onSuccess: () => {
+        // Also sync to local storage for checkout page fallback convenience
+        localStorage.setItem('apex_user_address', JSON.stringify(addressData));
+        setAddressSaved(true);
+        setTimeout(() => setAddressSaved(false), 3000);
+      }
+    });
   };
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
     setPasswordError('');
-
-    // Retrieve stored password or default to a standard placeholder if none exists
-    const sessionEmail = localStorage.getItem('user_email');
-    const registeredUsers = JSON.parse(localStorage.getItem('apex_registered_users') || '[]');
-    const currentUser = registeredUsers.find(u => u.email.trim().toLowerCase() === (sessionEmail || '').trim().toLowerCase());
-    
-    const storedPassword = currentUser?.password || localStorage.getItem('apex_user_password') || 'password123';
-
-    // Validate current password
-    if (passwordData.currentPassword !== storedPassword) {
-      setPasswordError('Incorrect current password entered.');
-      return;
-    }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setPasswordError('New passwords do not match.');
@@ -132,16 +117,25 @@ export default function Profile() {
       return;
     }
 
-    // Save new password to localStorage
-    localStorage.setItem('apex_user_password', passwordData.newPassword);
-    if (currentUser) {
-      currentUser.password = passwordData.newPassword;
-      localStorage.setItem('apex_registered_users', JSON.stringify(registeredUsers));
-    }
-
-    setPasswordSaved(true);
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setTimeout(() => setPasswordSaved(false), 3000);
+    router.put('/profile/password', {
+      current_password: passwordData.currentPassword,
+      password: passwordData.newPassword,
+      password_confirmation: passwordData.confirmPassword,
+    }, {
+      preserveScroll: true,
+      onSuccess: () => {
+        setPasswordSaved(true);
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setTimeout(() => setPasswordSaved(false), 3000);
+      },
+      onError: (errors) => {
+        if (errors.current_password) {
+          setPasswordError(errors.current_password);
+        } else {
+          setPasswordError('Failed to update password. Please check your inputs.');
+        }
+      }
+    });
   };
 
   return (
@@ -150,7 +144,6 @@ export default function Profile() {
 
       <main className="flex-1 flex flex-col min-w-0 bg-[#0d0d0f] max-w-4xl mx-auto w-full p-6 md:p-10 pt-8 space-y-8">
         
-        {/* Page Title & Intro Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-800">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-white">Account Profile</h1>

@@ -1,24 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { User, LogOut } from 'lucide-react';
 
 export default function Navbar() {
-  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState(null);
+  
+  // Get authenticated user data shared by Inertia
+  const { auth } = usePage().props;
+  const user = auth?.user;
 
-  // Check login state on component mount
-  useEffect(() => {
-    const email = localStorage.getItem('user_email');
-    if (email) {
-      setUserEmail(email);
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('user_email');
-    setUserEmail(null);
-    navigate('/login');
+  const handleLogout = (e) => {
+    e.preventDefault();
+    router.post(route('logout')); // Or your logout route
   };
 
   return (
@@ -29,54 +22,56 @@ export default function Navbar() {
           {/* Logo / Brand Name */}
           <div className="flex items-center space-x-3">
             <div className="w-3.5 h-3.5 bg-gradient-to-tr from-purple-600 to-indigo-500 rounded-full shadow-[0_0_12px_rgba(168,85,247,0.6)]"></div>
-            <Link to="/" className="text-xl font-black tracking-widest text-white">
+            <Link href="/dashboard" className="text-xl font-black tracking-widest text-white">
               APEX
             </Link>
           </div>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-1 bg-[#0f0f12]/80 border border-neutral-800 rounded-2xl p-1 text-xs font-medium text-neutral-300">
-            <Link to="/dashboard" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">Overview</Link>
-            <Link to="/catalog" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">Products</Link>
-            <Link to="/builder" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">PC Builder</Link>
-            <Link to="/order" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">Order</Link>
-            <Link to="/support" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">Contact</Link>
+            <Link href="/dashboard" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">Overview</Link>
+            <Link href="/catalog" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">Products</Link>
+            <Link href="/builder" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">PC Builder</Link>
+            <Link href="/order" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">Order</Link>
+            <Link href="/support" className="px-3 py-2 rounded-xl hover:bg-purple-500/10 hover:text-purple-300 transition-colors">Contact</Link>
           </nav>
 
           {/* Right Action Buttons & Profile / Auth State */}
           <div className="hidden md:flex items-center space-x-3">
             <Link 
-              to="/profile" 
+              href="/profile" 
               className="p-2 bg-[#161619] border border-neutral-800 hover:border-purple-500/50 text-neutral-300 hover:text-white rounded-xl transition-all flex items-center justify-center"
               title="User Profile"
             >
               <User className="w-4 h-4 text-purple-400" />
             </Link>
 
-            {userEmail ? (
+            {user ? (
               <div className="flex items-center space-x-3">
                 <span className="text-xs text-purple-300 font-semibold bg-purple-950/60 px-3 py-2 rounded-xl border border-purple-500/30">
-                  {userEmail}
+                  {user.email}
                 </span>
-                <button 
-                  onClick={handleLogout}
+                <Link 
+                  href="/logout"
+                  method="post" 
+                  as="button"
                   className="flex items-center space-x-1.5 text-xs font-semibold text-neutral-300 hover:text-rose-400 bg-[#161619] hover:bg-rose-500/10 border border-neutral-800 px-3 py-2 rounded-xl transition-all cursor-pointer"
                   title="Log Out"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span>Logout</span>
-                </button>
+                </Link>
               </div>
             ) : (
               <>
                 <Link 
-                  to="/login" 
+                  href="/" 
                   className="text-xs font-semibold text-neutral-300 hover:text-white transition-colors px-3 py-2"
                 >
                   Log In
                 </Link>
                 <Link 
-                  to="/register" 
+                  href="/register" 
                   className="text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 px-4 py-2.5 rounded-xl shadow-lg shadow-purple-900/30 transition-all"
                 >
                   Get Started
@@ -88,7 +83,7 @@ export default function Navbar() {
           {/* Mobile Menu Toggle & Profile Button */}
           <div className="lg:hidden flex items-center space-x-2">
             <Link 
-              to="/profile" 
+              href="/profile" 
               className="p-2 bg-[#161619] border border-neutral-800 text-neutral-300 rounded-xl flex items-center justify-center"
               title="User Profile"
             >
@@ -116,35 +111,35 @@ export default function Navbar() {
       {isOpen && (
         <div className="lg:hidden bg-[#161619] border-b border-neutral-800 px-4 pt-4 pb-6 space-y-2">
           <Link 
-            to="/dashboard" 
+            href="/dashboard" 
             onClick={() => setIsOpen(false)} 
             className="block text-neutral-300 hover:text-purple-400 font-medium py-2 text-xs"
           >
             Overview
           </Link>
           <Link 
-            to="/catalog" 
+            href="/catalog" 
             onClick={() => setIsOpen(false)} 
             className="block text-neutral-300 hover:text-purple-400 font-medium py-2 text-xs"
           >
             Products & Services
           </Link>
           <Link 
-            to="/builder" 
+            href="/builder" 
             onClick={() => setIsOpen(false)} 
             className="block text-neutral-300 hover:text-purple-400 font-medium py-2 text-xs"
           >
             PC Builder
           </Link>
           <Link 
-            to="/order" 
+            href="/order" 
             onClick={() => setIsOpen(false)} 
             className="block text-neutral-300 hover:text-purple-400 font-medium py-2 text-xs"
           >
             Order
           </Link>
           <Link 
-            to="/profile" 
+            href="/profile" 
             onClick={() => setIsOpen(false)} 
             className="flex items-center gap-2 text-neutral-300 hover:text-purple-400 font-medium py-2 text-xs"
           >
@@ -152,7 +147,7 @@ export default function Navbar() {
             <span>Profile</span>
           </Link>
           <Link 
-            to="/support" 
+            href="/support" 
             onClick={() => setIsOpen(false)} 
             className="block text-neutral-300 hover:text-purple-400 font-medium py-2 text-xs"
           >
@@ -160,24 +155,27 @@ export default function Navbar() {
           </Link>
 
           <div className="pt-4 flex flex-col space-y-2 border-t border-neutral-800">
-            {userEmail ? (
-              <button 
-                onClick={() => { setIsOpen(false); handleLogout(); }}
+            {user ? (
+              <Link 
+                href="/logout"
+                method="post"
+                as="button"
+                onClick={() => setIsOpen(false)}
                 className="w-full text-center text-xs font-semibold text-rose-400 py-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl"
               >
-                Log Out ({userEmail})
-              </button>
+                Log Out ({user.email})
+              </Link>
             ) : (
               <>
                 <Link 
-                  to="/login" 
+                  href="/" 
                   onClick={() => setIsOpen(false)} 
                   className="text-center text-xs font-semibold text-neutral-300 py-2.5 bg-neutral-800 rounded-xl"
                 >
                   Log In
                 </Link>
                 <Link 
-                  to="/register" 
+                  href="/register" 
                   onClick={() => setIsOpen(false)} 
                   className="text-center text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 py-2.5 rounded-xl shadow-lg"
                 >

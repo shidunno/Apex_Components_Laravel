@@ -1,47 +1,81 @@
 import { useState, useEffect } from 'react';
 import { Heart, ShoppingCart, Trash2, CheckCircle } from 'lucide-react';
-import Navbar from '../Components/Navbar';
-import Footer from '../Components/Footer';
+import Navbar from '../../Components/Navbar';
+import Footer from '../../Components/Footer';
 
 export default function Wishlist() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [addedIds, setAddedIds] = useState([]);
 
+  // Fetch user-specific wishlist from the backend database on load
   useEffect(() => {
-    const savedWishlist = JSON.parse(localStorage.getItem('apex_wishlist') || '[]');
-    setWishlistItems(savedWishlist);
+    fetch('/wishlist-items', {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(res => res.json())
+      .then(data => setWishlistItems(data || []))
+      .catch(error => console.error("Could not fetch wishlist from server", error));
   }, []);
 
-  const removeItem = (id) => {
-    const updatedItems = wishlistItems.filter(item => item.id !== id);
-    setWishlistItems(updatedItems);
-    localStorage.setItem('apex_wishlist', JSON.stringify(updatedItems));
+  const removeItem = (productId) => {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    fetch(`/wishlist-items/${productId}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': csrfToken
+      }
+    })
+      .then(() => {
+        setWishlistItems(prev => prev.filter(item => item.id !== productId));
+      })
+      .catch(error => console.error("Could not remove item from wishlist", error));
   };
 
   const addToCart = (item) => {
-    const currentCart = JSON.parse(localStorage.getItem('pc_cart') || '[]');
-    const existingIndex = currentCart.findIndex(cartItem => cartItem.id === item.id);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-    let updatedCart;
-    if (existingIndex > -1) {
-      updatedCart = currentCart.map((cartItem, idx) => {
-        if (idx === existingIndex) {
-          const newQty = (cartItem.quantity || 1) + 1;
-          return { ...cartItem, quantity: newQty, totalPrice: cartItem.price * newQty };
-        }
-        return cartItem;
-      });
-    } else {
-      updatedCart = [...currentCart, { ...item, quantity: 1, totalPrice: item.price }];
-    }
+    // Fetch current cart, append item, and save back to backend /cart
+    fetch('/cart', {
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then(res => res.json())
+      .then(currentCart => {
+        const cartItem = {
+          id: Date.now() + Math.random(),
+          date: new Date().toLocaleDateString(),
+          parts: { [item.categoryKey || 'component']: item },
+          totalPrice: Number(item.price),
+          name: item.name,
+          image: item.image,
+          isSinglePart: true
+        };
 
-    localStorage.setItem('pc_cart', JSON.stringify(updatedCart));
+        const updatedCart = [...(currentCart || []), cartItem];
 
-    // Trigger inline success feedback instead of an alert
-    setAddedIds(prev => [...prev, item.id]);
-    setTimeout(() => {
-      setAddedIds(prev => prev.filter(id => id !== item.id));
-    }, 2000);
+        return fetch('/cart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': csrfToken
+          },
+          body: JSON.stringify({ items: updatedCart })
+        });
+      })
+      .then(() => {
+        setAddedIds(prev => [...prev, item.id]);
+        setTimeout(() => {
+          setAddedIds(prev => prev.filter(id => id !== item.id));
+        }, 2000);
+      })
+      .catch(error => console.error("Could not add wishlist item to cart", error));
   };
 
   return (
@@ -54,8 +88,8 @@ export default function Wishlist() {
         {/* Page Title & Stats Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-800">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">My Wishlist[cite: 8]</h1>
-            <p className="text-xs text-neutral-400 mt-0.5">Saved components ready for your next custom build.[cite: 8]</p>
+            <h1 className="text-xl font-bold tracking-tight text-white">My Wishlist</h1>
+            <p className="text-xs text-neutral-400 mt-0.5">Saved components ready for your next custom build.</p>
           </div>
           
           <div className="bg-[#161619] px-4 py-2 rounded-2xl border border-neutral-800 flex items-center space-x-3 w-fit shadow-inner">
@@ -71,8 +105,8 @@ export default function Wishlist() {
         {wishlistItems.length === 0 ? (
           <div className="bg-[#161619] border border-neutral-800 rounded-3xl p-12 text-center space-y-4">
             <Heart className="w-12 h-12 text-neutral-600 mx-auto" />
-            <h2 className="text-lg font-bold text-white">Your wishlist is empty[cite: 8]</h2>
-            <p className="text-xs text-neutral-400 max-w-sm mx-auto">Explore parts on your dashboard and click the heart icon to save components for later.[cite: 8]</p>
+            <h2 className="text-lg font-bold text-white">Your wishlist is empty</h2>
+            <p className="text-xs text-neutral-400 max-w-sm mx-auto">Explore parts on your dashboard and click the heart icon to save components for later.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -100,13 +134,12 @@ export default function Wishlist() {
                     <h3 className="text-base font-bold text-white mt-2">{item.name}</h3>
                     <div className="flex items-center space-x-2">
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                        item.inStock !== false 
+                        item.stock !== 0 
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
                           : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                       }`}>
-                        {item.inStock !== false ? 'In Stock' : 'Out of Stock'}
+                        {item.stock !== 0 ? 'In Stock' : 'Out of Stock'}
                       </span>
-                      <span className="text-xs text-neutral-400">★ {item.rating || '4.9'}</span>
                     </div>
                   </div>
 
@@ -118,12 +151,12 @@ export default function Wishlist() {
                     </div>
 
                     <button
-                      disabled={item.inStock === false}
+                      disabled={item.stock === 0}
                       onClick={() => addToCart(item)}
                       className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center space-x-2 transition-all shadow-sm cursor-pointer ${
                         isJustAdded
                           ? 'bg-emerald-600 text-white shadow-emerald-900/40'
-                          : item.inStock !== false
+                          : item.stock !== 0
                             ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90 shadow-purple-900/30'
                             : 'bg-neutral-800 text-neutral-500 cursor-not-allowed border border-neutral-700/50'
                       }`}

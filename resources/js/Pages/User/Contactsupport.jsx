@@ -1,7 +1,7 @@
 import { HelpCircle } from 'lucide-react';
-import Navbar from '../Components/Navbar';
-import ContactSupport from '../Components/ContactSupport';
-import Footer from '../Components/Footer';
+import Navbar from '../../Components/Navbar';
+import ContactSupport from '../../Components/ContactSupport';
+import Footer from '../../Components/Footer';
 
 export default function Contactsupport() {
   return (

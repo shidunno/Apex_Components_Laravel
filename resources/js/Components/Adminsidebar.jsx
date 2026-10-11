@@ -1,16 +1,15 @@
-import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, Users, MessageSquare, Package, LogOut } from 'lucide-react';
+import { usePage, router } from '@inertiajs/react';
+import { LayoutDashboard, ShoppingBag, MessageSquare, Package, LogOut } from 'lucide-react';
 
-export default function AdminSidebar({ ordersCount = 0, usersCount = 0, supportCount = 0 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
+export default function AdminSidebar({ ordersCount = 0, supportCount = 0 }) {
+  const { url } = usePage();
 
   const adminUser = JSON.parse(localStorage.getItem('apex_user') || '{}');
 
   const handleLogout = () => {
     localStorage.removeItem('apex_user');
     localStorage.removeItem('user_email');
-    navigate('/login');
+    router.post('/logout');
   };
 
   return (
@@ -27,9 +26,9 @@ export default function AdminSidebar({ ordersCount = 0, usersCount = 0, supportC
         <nav className="space-y-2">
           {/* Overview / Dashboard */}
           <button
-            onClick={() => navigate('/admin')}
+            onClick={() => router.visit('/admin/dashboard')}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              location.pathname === '/admin'
+              url === '/admin/dashboard'
                 ? 'bg-purple-600 text-white font-bold shadow-lg shadow-purple-900/40'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
             }`}
@@ -40,9 +39,9 @@ export default function AdminSidebar({ ordersCount = 0, usersCount = 0, supportC
 
           {/* Customer Orders */}
           <button
-            onClick={() => navigate('/admin/orders')}
+            onClick={() => router.visit('/admin/orders')}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              location.pathname === '/admin/orders'
+              url === '/admin/orders'
                 ? 'bg-purple-600 text-white font-bold shadow-lg shadow-purple-900/40'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
             }`}
@@ -58,9 +57,9 @@ export default function AdminSidebar({ ordersCount = 0, usersCount = 0, supportC
 
           {/* Catalog & Products */}
           <button
-            onClick={() => navigate('/admin/products')}
+            onClick={() => router.visit('/admin/products')}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              location.pathname === '/admin/products'
+              url === '/admin/products'
                 ? 'bg-purple-600 text-white font-bold shadow-lg shadow-purple-900/40'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
             }`}
@@ -73,9 +72,9 @@ export default function AdminSidebar({ ordersCount = 0, usersCount = 0, supportC
 
           {/* Support Inquiries */}
           <button
-            onClick={() => navigate('/admin/support')}
+            onClick={() => router.visit('/admin/support')}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              location.pathname === '/admin/support'
+              url === '/admin/support'
                 ? 'bg-purple-600 text-white font-bold shadow-lg shadow-purple-900/40'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
             }`}
@@ -86,20 +85,6 @@ export default function AdminSidebar({ ordersCount = 0, usersCount = 0, supportC
             </div>
             <span className="bg-neutral-800 px-2 py-0.5 rounded-full text-[10px] text-amber-300 font-mono">
               {supportCount}
-            </span>
-          </button>
-
-          {/* Registered Users */}
-          <button
-            onClick={() => navigate('/admin')}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 text-xs font-semibold transition-all cursor-pointer"
-          >
-            <div className="flex items-center space-x-3">
-              <Users className="w-4 h-4" />
-              <span>Registered Users</span>
-            </div>
-            <span className="bg-neutral-800 px-2 py-0.5 rounded-full text-[10px] text-indigo-300 font-mono">
-              {usersCount}
             </span>
           </button>
         </nav>

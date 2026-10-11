@@ -17,7 +17,64 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            
+            // Added fields to match your Profile.jsx form data[cite: 1]
+            $table->string('role')->default('customer');
+            $table->text('avatar')->nullable();
+            $table->string('street')->nullable();
+            $table->string('city')->nullable();
+            $table->string('state')->nullable();
+            $table->string('postal_code')->nullable();
+            $table->string('country')->nullable();
+
             $table->rememberToken();
+            $table->timestamps();
+        });
+
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->text('description')->nullable();
+            $table->decimal('price', 10, 2);
+            $table->integer('stock')->default(0);
+            $table->string('category');
+            $table->string('image')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('orders', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('status')->default('Processing');
+            $table->decimal('total_price', 10, 2);
+            $table->text('shipping_address');
+            $table->json('items');
+            $table->timestamps();
+        });
+
+        Schema::create('support_tickets', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('subject');
+            $table->text('message');
+            $table->string('status')->default('Open'); // Open, In Progress, Resolved
+            $table->timestamps();
+        });
+
+        Schema::create('favorites', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
+
+            $table->unique(['user_id', 'product_id']);
+        });
+
+        Schema::create('carts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->unique()->constrained()->onDelete('cascade'); // <-- The ->unique() part prevents sharing!
+            $table->json('items');
             $table->timestamps();
         });
 
@@ -45,5 +102,7 @@ return new class extends Migration
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('products');
+        Schema::dropIfExists('favorites');
     }
 };

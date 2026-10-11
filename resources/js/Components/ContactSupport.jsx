@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Mail, Phone, Clock, CheckCircle2, Send } from 'lucide-react';
 
-export default function ContactSupport() {
+export default function ContactSupport({ auth }) {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: auth?.user?.name || '',
+    email: auth?.user?.email || '',
     category: 'technical',
     orderId: '',
     subject: '',
@@ -14,84 +14,45 @@ export default function ContactSupport() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Preload name and email from localStorage session/users on mount
-  useEffect(() => {
-    const sessionEmail = localStorage.getItem('user_email');
-    const registeredUsers = JSON.parse(localStorage.getItem('apex_registered_users') || '[]');
-    
-    let matchedName = '';
-    let matchedEmail = sessionEmail || '';
-
-    if (sessionEmail) {
-      const found = registeredUsers.find(u => u.email.trim().toLowerCase() === sessionEmail.trim().toLowerCase());
-      if (found) {
-        matchedName = found.name;
-      } else if (sessionEmail === 'user@gmail.com') {
-        matchedName = 'Default User';
-      } else if (sessionEmail === 'admin@gmail.com') {
-        matchedName = 'System Administrator';
-      }
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      name: matchedName || '',
-      email: matchedEmail || ''
-    }));
-  }, []);
-
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // 1. Create the new ticket object
-    const newTicket = {
-      id: 'TKT-' + Math.floor(100000 + Math.random() * 900000),
-      name: formData.name,
-      email: formData.email,
-      category: formData.category,
-      orderId: formData.orderId,
-      subject: formData.subject,
-      message: formData.message,
-      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'Pending'
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    const payload = {
+      subject: `[${formData.category.toUpperCase()}] ${formData.subject}${formData.orderId ? ` (Order: ${formData.orderId})` : ''}`,
+      message: formData.message
     };
 
-    // 2. Fetch existing tickets from localStorage, append the new one, and save back
-    const existingTickets = JSON.parse(localStorage.getItem('apex_support_tickets') || '[]');
-    const updatedTickets = [newTicket, ...existingTickets];
-    localStorage.setItem('apex_support_tickets', JSON.stringify(updatedTickets));
-
-    // Simulate ticket creation API delay
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-    }, 1200);
+    fetch('/support/tickets', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': csrfToken
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(data => {
+        setIsSubmitting(false);
+        if (data.success) {
+          setIsSubmitted(true);
+        }
+      })
+      .catch(error => {
+        setIsSubmitting(false);
+        console.error("Could not save support ticket", error);
+      });
   };
 
   const handleReset = () => {
     setIsSubmitted(false);
-    
-    // Retain preloaded user details on reset
-    const sessionEmail = localStorage.getItem('user_email');
-    const registeredUsers = JSON.parse(localStorage.getItem('apex_registered_users') || '[]');
-    let matchedName = '';
-    let matchedEmail = sessionEmail || '';
-
-    if (sessionEmail) {
-      const found = registeredUsers.find(u => u.email.trim().toLowerCase() === sessionEmail.trim().toLowerCase());
-      if (found) {
-        matchedName = found.name;
-      } else if (sessionEmail === 'user@gmail.com') {
-        matchedName = 'Default User';
-      } else if (sessionEmail === 'admin@gmail.com') {
-        matchedName = 'System Administrator';
-      }
-    }
-
     setFormData({
-      name: matchedName || '',
-      email: matchedEmail || '',
+      name: auth?.user?.name || '',
+      email: auth?.user?.email || '',
       category: 'technical',
       orderId: '',
       subject: '',
@@ -139,7 +100,7 @@ export default function ContactSupport() {
             </div>
             <h3 className="text-xl font-bold text-white">Support Ticket Submitted!</h3>
             <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
-              Thank you for reaching out. Your ticket has been logged in our queue. A confirmation email has been dispatched to <span className="text-white font-medium">{formData.email}</span>.
+              Thank you for reaching out. Your ticket has been securely logged into our backend database.
             </p>
             <button
               onClick={handleReset}

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@inertiajs/react';
 import { Cpu, Wrench, ShieldAlert, ArrowRight, Layers, Flame } from 'lucide-react';
 
 export default function ProductsServices() {
@@ -44,7 +44,7 @@ export default function ProductsServices() {
         </div>
 
         <Link 
-          to="/catalog" 
+          href="/catalog" 
           className="self-start sm:self-center inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-purple-500/50 text-neutral-300 hover:text-white font-semibold text-xs transition-all shadow-sm"
         >
           View Full Catalog <ArrowRight className="w-4 h-4 text-purple-400" />
@@ -81,7 +81,7 @@ export default function ProductsServices() {
               </div>
 
               <Link 
-                to={item.link}
+                href={item.link}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors pt-2 border-t border-neutral-800/60"
               >
                 Learn more <ArrowRight className="w-3.5 h-3.5" />
